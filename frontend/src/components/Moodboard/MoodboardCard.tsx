@@ -1,7 +1,6 @@
-import React from 'react';
 import { MoodboardProduct } from '../../types';
 import { cn } from '../../lib/utils';
-import { ExternalLink, Check, AlertCircle } from 'lucide-react';
+import { ExternalLink, Check, AlertCircle, RefreshCcw } from 'lucide-react';
 
 interface MoodboardCardProps {
     product: MoodboardProduct;
@@ -48,6 +47,11 @@ export function MoodboardCard({ product, selected, onSelect }: MoodboardCardProp
                     {isMigrated && (
                         <div className="bg-green-500/90 text-white text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
                             <Check className="w-2.5 h-2.5" /> Migrated
+                        </div>
+                    )}
+                    {product.status?.needsUpdate && (
+                        <div className="bg-blue-500/90 text-white text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1">
+                            <RefreshCcw className="w-2.5 h-2.5" /> Update
                         </div>
                     )}
                     {!isComplete && (

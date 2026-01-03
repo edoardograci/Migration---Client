@@ -5,8 +5,14 @@ export const api = axios.create({
 });
 
 export const notionApi = {
-    getDesigners: () => api.get('/notion/designers').then(res => res.data),
-    getMoodboard: () => api.get('/notion/moodboard').then(res => res.data),
+    getDesigners: (includeAll = false) =>
+        api.get('/notion/designers', { params: { all: includeAll } })
+            .then(res => res.data),
+    getMoodboard: (includeAll = false) =>
+        api.get('/notion/moodboard', { params: { all: includeAll } })
+            .then(res => res.data),
+    compareStatus: (type: 'designers' | 'moodboard') =>
+        api.post('/notion/compare-status', { type }).then(res => res.data),
 };
 
 export const tursoApi = {

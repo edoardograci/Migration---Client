@@ -1,7 +1,6 @@
-import React from 'react';
 import { Designer } from '../../types';
 import { cn } from '../../lib/utils';
-import { Check, AlertTriangle, ExternalLink, Instagram, Globe } from 'lucide-react';
+import { Check, AlertTriangle, Globe, Instagram, RefreshCcw } from 'lucide-react';
 
 interface DesignerCardProps {
     designer: Designer;
@@ -10,9 +9,9 @@ interface DesignerCardProps {
     onMigrate?: () => void;
 }
 
-export function DesignerCard({ designer, selected, onSelect, onMigrate }: DesignerCardProps) {
+export function DesignerCard({ designer, selected, onSelect }: DesignerCardProps) {
     const isMigrated = !!designer.status?.migrated;
-    const hasError = !!designer.status?.error;
+    const notionStatus = designer.notionStatus || 'Draft';
 
     // Validation
     const missingFields = [];
@@ -41,14 +40,35 @@ export function DesignerCard({ designer, selected, onSelect, onMigrate }: Design
             </div>
 
             {/* Status Indicators */}
-            <div className="absolute top-2 right-2 z-10 flex gap-1">
+            <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
+                {/* Notion Status Badge */}
+                <div className={cn(
+                    "text-xs px-2 py-0.5 rounded-full shadow-sm font-medium",
+                    notionStatus === 'Published' && "bg-blue-500 text-white",
+                    notionStatus === 'Draft' && "bg-gray-400 text-white",
+                    notionStatus === 'Archived' && "bg-red-500 text-white"
+                )}>
+                    {notionStatus}
+                </div>
+
+                {/* Migration Status Badge */}
                 {isMigrated && (
                     <div className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Migrated
+                        <Check className="w-3 h-3" /> Live
                     </div>
                 )}
+
+                {/* Update Available Badge */}
+                {designer.status?.needsUpdate && (
+                    <div className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                        <RefreshCcw className="w-3 h-3" /> Update
+                    </div>
+                )}
+
+                {/* Validation Badge */}
                 {!isValid && (
-                    <div className="bg-yellow-500 text-yellow-50 text-xs px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1" title={`Missing: ${missingFields.join(', ')}`}>
+                    <div className="bg-yellow-500 text-yellow-50 text-xs px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1"
+                        title={`Missing: ${missingFields.join(', ')}`}>
                         <AlertTriangle className="w-3 h-3" /> Incomplete
                     </div>
                 )}

@@ -5,7 +5,7 @@ import { NotionService } from './NotionService';
 import { EnrichmentService } from './EnrichmentService';
 import { VectorizeService } from './VectorizeService';
 import { buildEmbeddingText } from '../lib/semantic-enrichment';
-import { generateId } from '../lib/utils';
+import { generateId, generateContentHash } from '../lib/utils';
 import { config } from '../config';
 
 interface Job {
@@ -121,16 +121,17 @@ export class MigrationService {
                     await StorageService.upload(coverKey, conversion.buffer, 'image/webp');
                 }
 
-                // 2. Insert into Turso
-                // Assuming schema matches scripts/migrate-index.js
+                const contentHash = generateContentHash(designer);
                 const slug = this.generateSlug(designer.name);
+
+                // 2. Insert into Turso
                 await turso.execute({
                     sql: `
                         INSERT INTO studios (
                             id, notion_id, slug, status, name, 
                             city, cover, website, instagram, email, 
-                            created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            content_hash, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(notion_id) DO UPDATE SET
                             name=excluded.name,
                             slug=excluded.slug,
@@ -139,6 +140,7 @@ export class MigrationService {
                             website=excluded.website,
                             instagram=excluded.instagram,
                             email=excluded.email,
+                            content_hash=excluded.content_hash,
                             updated_at=excluded.updated_at
                     `,
                     args: [
@@ -148,11 +150,11 @@ export class MigrationService {
                         'Published',
                         designer.name,
                         designer.city,
-                        coverKey, // Store the R2 key (or full URL?) Script stored key? "cover" column usually stores key or url. Let's check script... 
-                        // script: cover: uploadedKey
+                        coverKey,
                         designer.website,
                         designer.instagram,
                         designer.email,
+                        contentHash,
                         new Date().toISOString(), // created_at
                         new Date().toISOString()  // updated_at
                     ]
@@ -183,22 +185,26 @@ export class MigrationService {
                 const enrichmentRes = await EnrichmentService.generate(product);
                 const enrichedData = enrichmentRes.enrichment;
 
-                // 2. Insert/Update Product in Turso
+                const contentHash = generateContentHash(product);
                 const productSlug = this.generateSlug(product.name);
+
+                // 2. Insert/Update Product in Turso
                 await turso.execute({
                     sql: `
                         INSERT INTO products (
                             id, notion_id, slug, status, name, 
-                            designer, year, link, city, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            designer, year, link, city, content_hash, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(notion_id) DO UPDATE SET
                             name=excluded.name, slug=excluded.slug, designer=excluded.designer,
                             year=excluded.year, link=excluded.link, city=excluded.city, 
+                            content_hash=excluded.content_hash,
                             updated_at=excluded.updated_at
                     `,
                     args: [
                         product.id, product.notionId, productSlug, 'Published', product.name,
                         product.designer, product.year, product.link, product.city,
+                        contentHash,
                         new Date().toISOString(), new Date().toISOString()
                     ]
                 });

@@ -1,25 +1,36 @@
 import { Client } from '@notionhq/client';
 import { config } from '../config';
+
 const notion = new Client({ auth: config.notion.apiKey });
 
 export class NotionService {
-    static async getDesigners() {
+    /**
+     * Fetch designers from Notion
+     * @param includeUnpublished - If true, fetches all designers regardless of status
+     */
+    static async getDesigners(includeUnpublished = false) {
         let allResults: any[] = [];
-        let cursor = undefined;
+        let cursor: string | undefined = undefined;
 
         try {
             do {
-                const response = await (notion.databases as any).query({
+                const queryParams: any = {
                     database_id: config.notion.designersDbId as string,
                     start_cursor: cursor,
                     page_size: 100,
-                    filter: {
+                };
+
+                // Only add filter if we want published only
+                if (!includeUnpublished) {
+                    queryParams.filter = {
                         property: 'Status',
                         status: { equals: 'Published' }
-                    }
-                });
+                    };
+                }
+
+                const response = await notion.databases.query(queryParams);
                 allResults = [...allResults, ...response.results];
-                cursor = response.next_cursor as any;
+                cursor = response.next_cursor ?? undefined;
             } while (cursor);
 
             return allResults.map((page: any) => ({
@@ -31,31 +42,41 @@ export class NotionService {
                 website: page.properties['Website URL']?.url,
                 instagram: page.properties['IG']?.url,
                 email: page.properties['Email']?.email,
-                published: true
+                notionStatus: page.properties['Status']?.status?.name || 'Draft',
+                published: page.properties['Status']?.status?.name === 'Published'
             }));
         } catch (error) {
-            console.error("Error fetching available designers from Notion", error);
+            console.error("Error fetching designers from Notion", error);
             throw error;
         }
     }
 
-    static async getMoodboard() {
+    /**
+     * Fetch moodboard products from Notion
+     * @param includeUnpublished - If true, fetches all products regardless of status
+     */
+    static async getMoodboard(includeUnpublished = false) {
         let allResults: any[] = [];
-        let cursor = undefined;
+        let cursor: string | undefined = undefined;
 
         try {
             do {
-                const response = await (notion.databases as any).query({
+                const queryParams: any = {
                     database_id: config.notion.moodboardDbId as string,
                     start_cursor: cursor,
                     page_size: 100,
-                    filter: {
+                };
+
+                if (!includeUnpublished) {
+                    queryParams.filter = {
                         property: 'Status',
                         select: { equals: 'Published' }
-                    }
-                });
+                    };
+                }
+
+                const response = await notion.databases.query(queryParams);
                 allResults = [...allResults, ...response.results];
-                cursor = response.next_cursor as any;
+                cursor = response.next_cursor ?? undefined;
             } while (cursor);
 
             return allResults.map((page: any) => {
@@ -70,6 +91,8 @@ export class NotionService {
                     year: props['Year']?.select?.name,
                     city: props['City']?.select?.name || props['City']?.rich_text?.[0]?.plain_text,
                     link: props['Link']?.url,
+                    notionStatus: props['Status']?.select?.name || 'Draft',
+                    published: props['Status']?.select?.name === 'Published',
                     images: images.map((img: any, index: number) => ({
                         url: img.file?.url || img.external?.url,
                         position: index

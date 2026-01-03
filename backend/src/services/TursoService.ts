@@ -15,20 +15,21 @@ export class TursoService {
 
         try {
             const result = await turso.execute({
-                sql: `SELECT notion_id, updated_at FROM ${table} WHERE notion_id IN (${placeholders})`,
+                sql: `SELECT notion_id, updated_at, content_hash FROM ${table} WHERE notion_id IN (${placeholders})`,
                 args: notionIds
             });
 
             const statusMap: Record<string, any> = {};
             // Initialize all as not migrated
-            notionIds.forEach(id => statusMap[id] = { migrated: false, migratedAt: null });
+            notionIds.forEach(id => statusMap[id] = { migrated: false, migratedAt: null, contentHash: null });
 
             // Update found ones
             result.rows.forEach(row => {
                 const nid = row['notion_id'] as string;
                 statusMap[nid] = {
                     migrated: true,
-                    migratedAt: row['updated_at']
+                    migratedAt: row['updated_at'],
+                    contentHash: row['content_hash']
                 };
             });
 

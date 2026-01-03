@@ -14,17 +14,27 @@ router.post('/analyze', async (req, res, next) => {
 router.post('/convert', async (req, res, next) => {
     try {
         const { imageUrl, strategy, forceConvert } = req.body;
+
+        if (!imageUrl) {
+            return res.status(400).json({ error: 'Missing required parameter: imageUrl' });
+        }
+
+        // Download original to get size
+        const originalResponse = await fetch(imageUrl);
+        if (!originalResponse.ok) {
+            return res.status(400).json({ error: 'Failed to fetch image from URL' });
+        }
+        const originalBuffer = Buffer.from(await originalResponse.arrayBuffer());
+        const originalSize = originalBuffer.length;
+
         const result = await ImageService.convert(imageUrl, strategy, forceConvert);
 
-        // In a real scenario we need original size to compare. 
-        // Assuming original was downloaded and we don't have its size easily exposed from convert helper return 
-        // unless we modified it. 
-        // For now returning calculated convertedSize.
+        const reductionPercent = Math.round(((originalSize - result.size) / originalSize) * 100);
 
         res.json({
-            originalSize: 0, // Placeholder
+            originalSize: originalSize,
             convertedSize: result.size,
-            reductionPercent: 0,
+            reductionPercent: reductionPercent,
             ssimScore: result.ssim,
             strategy: result.strategy,
             convertedBlob: result.buffer.toString('base64'),

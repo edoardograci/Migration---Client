@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import { notionApi, tursoApi } from '../api';
+import { notionApi } from '../api';
 import { MoodboardProduct } from '../types';
 
 interface MoodboardFilters {
-    status: 'all' | 'migrated' | 'complete';
+    status: 'all' | 'migrated' | 'complete' | 'incomplete';
+    notionStatus: 'all' | 'Published' | 'Draft' | 'Archived';
     city: string | null;
 }
 
@@ -20,24 +21,30 @@ interface MoodboardState {
     setFilter: (key: keyof MoodboardFilters, value: any) => void;
 }
 
-export const useMoodboardStore = create<MoodboardState>((set, get) => ({
+export const useMoodboardStore = create<MoodboardState>((set) => ({
     products: [],
     isLoading: false,
     selectedIds: new Set(),
     filters: {
         status: 'all',
+        notionStatus: 'all',
         city: null
     },
 
     fetchProducts: async () => {
         set({ isLoading: true });
         try {
-            const data = await notionApi.getMoodboard();
-            const statusMap = await tursoApi.checkStatus(data.products.map((d: any) => d.id), 'moodboard');
+            // Fetch ALL products via status comparison endpoint
+            const data = await notionApi.compareStatus('moodboard');
 
-            const products = data.products.map((d: any) => ({
+            const products = data.items.map((d: any) => ({
                 ...d,
-                status: statusMap.statuses[d.id]
+                status: {
+                    migrated: d.inTurso,
+                    migratedAt: d.lastMigrated,
+                    needsUpdate: d.needsUpdate,
+                    error: null
+                }
             }));
 
             set({ products, isLoading: false });

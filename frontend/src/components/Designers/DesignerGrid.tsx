@@ -25,12 +25,25 @@ export function DesignerGrid() {
 
     const filteredDesigners = useMemo(() => {
         return designers.filter(d => {
+            // Notion status filter
+            if (filters.notionStatus !== 'all' && d.notionStatus !== filters.notionStatus) {
+                return false;
+            }
+
+            // Migration status filter
             if (filters.status === 'complete') {
-                // Logic for complete
+                // Has all required fields
                 if (!d.name || !d.coverUrl) return false;
             }
+            if (filters.status === 'incomplete') {
+                // Missing required fields
+                if (d.name && d.coverUrl) return false;
+            }
             if (filters.status === 'migrated' && !d.status?.migrated) return false;
+
+            // City filter
             if (filters.city && d.city !== filters.city) return false;
+
             return true;
         });
     }, [designers, filters]);
@@ -92,15 +105,30 @@ export function DesignerGrid() {
                     </div>
 
                     <div>
-                        <h3 className="text-sm font-medium mb-2">Status</h3>
+                        <h3 className="text-sm font-medium mb-2">Notion Status</h3>
+                        <select
+                            className="w-full text-sm border rounded px-2 py-1 bg-background"
+                            value={filters.notionStatus}
+                            onChange={(e) => setFilter('notionStatus', e.target.value as any)}
+                        >
+                            <option value="all">All Statuses</option>
+                            <option value="Published">Published</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <h3 className="text-sm font-medium mb-2">Migration Status</h3>
                         <select
                             className="w-full text-sm border rounded px-2 py-1 bg-background"
                             value={filters.status}
-                            onChange={(e) => setFilter('status', e.target.value)}
+                            onChange={(e) => setFilter('status', e.target.value as any)}
                         >
-                            <option value="all">All Status</option>
-                            <option value="migrated">Migrated</option>
-                            <option value="complete">Complete</option>
+                            <option value="all">All Items</option>
+                            <option value="migrated">Already Migrated</option>
+                            <option value="complete">Ready to Migrate</option>
+                            <option value="incomplete">Missing Data</option>
                         </select>
                     </div>
 
