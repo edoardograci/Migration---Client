@@ -1,0 +1,22 @@
+{
+  "type": "module",
+  "scripts": {
+    "migrate:moodboard": "node scripts/migrate-moodboard.js",
+    "migrate:moodboard:no-ai": "node scripts/migrate-moodboard.js --no-ai",
+    "migrate:index": "node scripts/migrate-index.js",
+    "migrate:spotlight": "node scripts/migrate-spotlight.js",
+    "regenerate:embeddings": "node scripts/regenerate-embeddings.js",
+    "regenerate:embeddings:force": "node scripts/regenerate-embeddings.js --force",
+    "regenerate:embeddings:dry": "node scripts/regenerate-embeddings.js --dry-run",
+    "schema:create": "node scripts/create-schema.js",
+    "test:ollama": "node scripts/test-ollama.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.940.0",
+    "@libsql/client": "^0.15.15",
+    "@notionhq/client": "^2.3.0",
+    "dotenv": "^17.2.3",
+    "node-fetch": "^3.3.2",
+    "sharp": "^0.34.5"
+  }
+}
