@@ -1,6 +1,15 @@
 {
-  "type": "module",
+  "name": "migration-dashboard-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm -r build",
+    "dev:api": "pnpm --filter api dev",
+    "dev:dashboard": "pnpm --filter dashboard dev",
     "migrate:moodboard": "node scripts/migrate-moodboard.js",
     "migrate:moodboard:no-ai": "node scripts/migrate-moodboard.js --no-ai",
     "migrate:index": "node scripts/migrate-index.js",
